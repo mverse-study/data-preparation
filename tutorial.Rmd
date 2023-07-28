@@ -391,7 +391,9 @@ rows (or columns). We set `scales = "free_y"` to remove unnecessary y axis
 labels.
 
 ```{r}
-multiverse_table['has_is_married'] <- grepl("is_married", multiverse_table$Model)
+multiverse_table['has_is_married'] <- ifelse(
+  grepl("is_married", multiverse_table$Model), 
+  "Includes is_married", "")
 
 ggplot(multiverse_table, aes(y = Model)) +
   geom_point(aes(x = Estimate)) +
@@ -400,6 +402,44 @@ ggplot(multiverse_table, aes(y = Model)) +
   theme_minimal() +
   # facet_grid() expects rows and cols wrapped in vars()
   facet_grid(rows = vars(has_is_married), scales = "free_y")
+```
+
+Suppose you want to highlight the model that includes both `is_married` and
+`payment_income_ratio`. You can use `&` to combine more than one logical checks
+to check that all of them are true. 
+
+```{r}
+multiverse_table['has_both'] <- ifelse(
+  grepl("is_married", multiverse_table$Model) & 
+    grepl("payment_income_ratio", multiverse_table$Model),
+  "Includes both", "")
+
+ggplot(multiverse_table, aes(y = Model)) +
+  geom_point(aes(x = Estimate)) +
+  geom_linerange(aes(xmin = LowerCI, xmax = UpperCI)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  theme_minimal() +
+  # facet_grid() expects rows and cols wrapped in vars()
+  facet_grid(rows = vars(has_both), scales = "free_y")
+```
+
+We may want to use short forms for the y-axis labels instead of including the
+full formulae. We can create a new column with `paste()` to create a numbered
+label for the models. You can use `factor()` to keep the ordering.
+
+```{r}
+multiverse_table["Model_label"] <- factor(
+  paste("Model", 1:4),
+  # define levels according to the order of `Estimate`
+  levels = paste("Model", 1:4)[order(multiverse_table$Estimate)]
+  )
+ggplot(multiverse_table, aes(y = Model_label)) +
+  geom_point(aes(x = Estimate)) +
+  geom_linerange(aes(xmin = LowerCI, xmax = UpperCI)) +
+  geom_vline(xintercept = 0, linetype = "dotted") +
+  theme_minimal() +
+  # facet_grid() expects rows and cols wrapped in vars()
+  facet_grid(rows = vars(has_both), scales = "free_y")
 ```
 
 > In all 4 models fitted in the multiverse analysis, we do not find 
